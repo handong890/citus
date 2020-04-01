@@ -270,7 +270,7 @@ GroupShardPlacementsForTableOnGroup(Oid relationId, int32 groupId)
 		}
 	}
 
-	ReleaseCacheEntry(distTableCacheEntry);
+	ReleaseTableCacheEntry(distTableCacheEntry);
 	return resultList;
 }
 
@@ -322,7 +322,7 @@ ShardIntervalsOnWorkerGroup(WorkerNode *workerNode, Oid relationId)
 		}
 	}
 
-	ReleaseCacheEntry(distTableCacheEntry);
+	ReleaseTableCacheEntry(distTableCacheEntry);
 	return shardIntervalList;
 }
 
@@ -501,7 +501,7 @@ LoadShardIntervalList(Oid relationId)
 		shardList = lappend(shardList, newShardInterval);
 	}
 
-	ReleaseCacheEntry(cacheEntry);
+	ReleaseTableCacheEntry(cacheEntry);
 	return shardList;
 }
 
@@ -522,7 +522,7 @@ ShardIntervalCount(Oid relationId)
 		shardIntervalCount = cacheEntry->shardIntervalArrayLength;
 	}
 
-	ReleaseCacheEntry(cacheEntry);
+	ReleaseTableCacheEntry(cacheEntry);
 	return shardIntervalCount;
 }
 
@@ -548,7 +548,7 @@ LoadShardList(Oid relationId)
 		shardList = lappend(shardList, shardIdPointer);
 	}
 
-	ReleaseCacheEntry(cacheEntry);
+	ReleaseTableCacheEntry(cacheEntry);
 	return shardList;
 }
 
@@ -1423,7 +1423,7 @@ IsHashDistributedTable(Oid relationId)
 		return false;
 	}
 	char sourceDistributionMethod = sourceTableEntry->partitionMethod;
-	ReleaseCacheEntry(sourceTableEntry);
+	ReleaseTableCacheEntry(sourceTableEntry);
 	return sourceDistributionMethod == DISTRIBUTE_BY_HASH;
 }
 
