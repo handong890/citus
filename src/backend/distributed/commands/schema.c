@@ -19,15 +19,17 @@
 #include "catalog/pg_class.h"
 #include "catalog/pg_namespace.h"
 #include "distributed/commands.h"
-#include <distributed/connection_management.h>
+#include "distributed/connection_management.h"
 #include "distributed/commands/utility_hook.h"
 #include "distributed/deparser.h"
 #include "distributed/listutils.h"
 #include "distributed/metadata/distobject.h"
 #include "distributed/metadata_cache.h"
-#include <distributed/metadata_sync.h>
-#include <distributed/remote_commands.h>
-#include <distributed/remote_commands.h>
+#include "distributed/metadata_sync.h"
+#include "distributed/reference_table_utils.h"
+#include "distributed/remote_commands.h"
+#include "distributed/remote_commands.h"
+#include "distributed/resource_lock.h"
 #include "nodes/parsenodes.h"
 #include "utils/fmgroids.h"
 #include "utils/lsyscache.h"
@@ -88,6 +90,16 @@ PreprocessDropSchemaStmt(Node *node, const char *queryString)
 			{
 				heapTuple = systable_getnext(scanDescriptor);
 				continue;
+			}
+
+			/*
+			 * If reference table, disallow running concurrently with
+			 * EnsureReferenceTablesExistOnAllNodes().
+			 */
+			if (IsReferenceTable(relationId))
+			{
+				int32 colocationId = CreateReferenceTableColocationId();
+				LockColocationId(colocationId, ExclusiveLock);
 			}
 
 			/* invalidate foreign key cache if the table involved in any foreign key */

@@ -29,6 +29,7 @@
 #include "distributed/metadata_sync.h"
 #include "distributed/multi_executor.h"
 #include "distributed/multi_partitioning_utils.h"
+#include "distributed/reference_table_utils.h"
 #include "distributed/relation_access_tracking.h"
 #include "distributed/resource_lock.h"
 #include "distributed/version_compat.h"
@@ -80,9 +81,19 @@ PreprocessDropTableStmt(Node *node, const char *queryString)
 		Oid relationId = RangeVarGetRelid(tableRangeVar, AccessShareLock, missingOK);
 
 		/* we're not interested in non-valid, non-distributed relations */
-		if (relationId == InvalidOid || !IsCitusTable(relationId))
+		if (!OidIsValid(relationId) || !IsCitusTable(relationId))
 		{
 			continue;
+		}
+
+		/*
+		 * If reference table, disallow running concurrently with
+		 * EnsureReferenceTablesExistOnAllNodes().
+		 */
+		if (IsReferenceTable(relationId))
+		{
+			int32 colocationId = CreateReferenceTableColocationId();
+			LockColocationId(colocationId, ExclusiveLock);
 		}
 
 		/* invalidate foreign key cache if the table involved in any foreign key */
