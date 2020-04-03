@@ -3557,7 +3557,12 @@ DistTableOidList(void)
 	}
 
 	systable_endscan(scanDescriptor);
-	heap_close(pgDistPartition, AccessShareLock);
+
+	/*
+	 * Don't release the lock to prevent dropping tables in case the caller wants
+	 * to do more cache lookups on them.
+	 */
+	heap_close(pgDistPartition, NoLock);
 
 	return distTableOidList;
 }

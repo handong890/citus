@@ -101,31 +101,19 @@ void
 EnsureReferenceTablesExistOnAllNodes(void)
 {
 	/*
-	 * TODO: Remove this. This is to avoid updating outputs of tests which
-	 * print colocation ids. Specially multi_colocation_utils which
-	 * manipulates colocation ids manually and needs to be updated to match
-	 * the new semantics.
+	 * This will also get a lock on pg_dist_partition which will prevent
+	 * concurrent table drops.
 	 */
-	if (ReferenceTableOidList() == NIL)
-	{
-		return;
-	}
-
-	/*
-	 * Prevent this function from running concurrently with itself. Also prevent
-	 * it from running concurrently with commands that drop reference tables to
-	 * avoid race conditions.
-	 */
-	int colocationId = CreateReferenceTableColocationId();
-	LockColocationId(colocationId, ExclusiveLock);
-
 	List *referenceTableIdList = ReferenceTableOidList();
 	if (referenceTableIdList == NIL)
 	{
 		/* no reference tables exist */
-		UnlockColocationId(colocationId, ExclusiveLock);
 		return;
 	}
+
+	/* prevent this function from running concurrently with itself */
+	int colocationId = CreateReferenceTableColocationId();
+	LockColocationId(colocationId, ExclusiveLock);
 
 	Oid referenceTableId = linitial_oid(referenceTableIdList);
 	List *shardIntervalList = LoadShardIntervalList(referenceTableId);
